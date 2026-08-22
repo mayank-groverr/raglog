@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.14"
 dependencies = [
     "qdrant-client>=1.19.0",
+    "tenacity>=9.1.4",
 ]
 
 [project.scripts]
