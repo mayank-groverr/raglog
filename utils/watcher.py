@@ -1,6 +1,8 @@
-import time
 import os
+import time
 
+import json
+from log_parser import parse_line
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -23,12 +25,25 @@ class MyHandler(FileSystemEventHandler):
             changed_content = f.read()
             self.last_position[path] = f.tell()
         if changed_content:
-            self.callback(changed_content)
+            self.callback(changed_content, path)
 
 
-def get_log_change(changed_content):
-    ...
-    # to Implent after Log parser is created
+def get_log_change(changed_content, source_path=None):
+    """
+    Called whenever new lines are appended to a watched .log file.
+    Splits the new content into lines and parses each one with log_parser.
+    """
+    for line in changed_content.splitlines():
+        line = line.strip()
+        if not line:
+            continue
+
+        record = parse_line(line)
+        record["file"] = source_path  # tag which file this came from
+
+        # For now: just print the parsed result as JSON.
+        # Replace this with DB insert / alerting / forwarding / etc.
+        print(json.dumps(record))
 
 
 if __name__ == "__main__":
