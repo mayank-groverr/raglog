@@ -2,7 +2,7 @@ import os
 import time
 
 import json
-from log_parser import parse_line
+from log_parser import parse_line_to_log
 from watchdog.events import FileSystemEventHandler
 from watchdog.observers import Observer
 
@@ -38,8 +38,7 @@ def get_log_change(changed_content, source_path=None):
         if not line:
             continue
 
-        record = parse_line(line)
-        record["file"] = source_path  # tag which file this came from
+        record = parse_line_to_log(line)  # tag which file this came from
 
         # For now: just print the parsed result as JSON.
         # Replace this with DB insert / alerting / forwarding / etc.
