@@ -38,10 +38,12 @@ class Window:
         return len(self.log_queue) >= min_logs
 
     def evict_oldest(self):
-        now = datetime.now()
+        if not self.log_queue:
+            return
+        newest = self.log_queue[-1].timestamp
+        cutoff = newest - self.time_window   # relative to newest log, not now
         while self.log_queue:
-            oldest_log = self.log_queue[0]
-            if now - oldest_log.timestamp > self.time_window:
+            if self.log_queue[0].timestamp < cutoff:
                 self.log_queue.popleft()
             else:
                 break
