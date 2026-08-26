@@ -10,15 +10,6 @@ def validate_query(query: str) -> None:
     if not query.strip():
         raise ValueError("Query cannot be empty.")
 
-def validate_embedding(embedding: list[float]) -> None:
-    """Validate that the embedding is a non-empty list of floats."""
-
-    
-    if not isinstance(embedding, list):
-        raise TypeError("Embedding must be a list.")
-
-    if not all(isinstance(value, float) for value in embedding):
-        raise TypeError("Embedding must contain only floats.")
 
 def retrieve(
     query: str,
