@@ -96,3 +96,10 @@ class QdrantVectorStore:
             )
         except (UnexpectedResponse, httpx.ConnectError, httpx.TimeoutException) as e:
             raise translate_qdrant_error(e, collection, extra=f" or id '{id}'") from e
+
+    @retry_on_transient
+    def create_point_Struct(self, id: str , vector: list[float], payload: dict) -> PointStruct:
+        """
+        Function to create a PointStruct object for Qdrant.
+        """
+        return PointStruct(id=id, vector=vector, payload=payload)
