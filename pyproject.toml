@@ -3,15 +3,16 @@ name = "raglog"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-authors = [
-    { name = "DevNishantHub", email = "nishantkumar211106@gmail.com" }
-]
+authors = [{ name = "DevNishantHub", email = "nishantkumar211106@gmail.com" }]
 requires-python = ">=3.14"
 dependencies = [
-    "pygtail>=0.14.0",
-    "qdrant-client>=1.19.0",
-    "tenacity>=9.1.4",
-    "watchdog>=6.0.0",
+  "joblib>=1.5.3",
+  "pygtail>=0.14.0",
+  "qdrant-client>=1.19.0",
+  "scikit-learn>=1.9.0",
+  "tenacity>=9.1.4",
+  "tqdm>=4.70.0",
+  "watchdog>=6.0.0",
 ]
 
 [project.scripts]
@@ -20,3 +21,6 @@ raglog = "raglog:main"
 [build-system]
 requires = ["uv_build>=0.12.1,<0.13.0"]
 build-backend = "uv_build"
+
+[tool.black]
+target-version = ["py314"]

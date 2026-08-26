@@ -38,9 +38,9 @@ PATTERNS: dict[str, re.Pattern] = {
     # HDFS log format (Hadoop standard log4j pattern):
     # 2026-08-21 10:00:00,123 INFO dfs.DataNode$PacketResponder: PacketResponder 1 for block blk_123 terminating
     "hdfs": re.compile(
-        r"^(?P<date>\d{4}-\d{2}-\d{2}) (?P<time>\d{2}:\d{2}:\d{2}),(?P<ms>\d{3}) "
-        r"(?P<level>[A-Z]+) (?P<component>[^:]+): (?P<message>.*)$"
-    ),
+    r"^(?P<date>\d{6})\s+(?P<time>\d{6})\s+(?P<thread>\d+)\s+"
+    r"(?P<level>[A-Z]+)\s+(?P<component>[^:]+):\s+(?P<message>.*)$"
+), 
     # Generic fallback: "YYYY-MM-DD HH:MM:SS LEVEL message..."
     # 2026-08-21 10:00:00 ERROR something went wrong
     "generic": re.compile(
@@ -112,7 +112,7 @@ def _nginx_level_from_status(status: str | None) -> str:
     HTTP status code as a reasonable stand-in."""
     try:
         code = int(status)
-    except TypeError, ValueError:
+    except (TypeError, ValueError):
         return "INFO"
     if code >= 500:
         return "ERROR"
@@ -155,21 +155,18 @@ def to_parsed_log(record: dict[str, Any]) -> ParsedLog:
         )
         metadata = {k: v for k, v in fields.items() if k != "time"}
 
+  
     elif source == "hdfs":
         try:
             timestamp = datetime.strptime(
-                f"{fields['date']} {fields['time']},{fields['ms']}",
-                "%Y-%m-%d %H:%M:%S,%f",
+                f"{fields['date']} {fields['time']}",
+                "%y%m%d %H%M%S"   # 081109 203615
             )
         except ValueError:
             timestamp = datetime.now()
         level = fields.get("level", "UNKNOWN")
         message = fields.get("message", raw)
-        metadata = {
-            k: v
-            for k, v in fields.items()
-            if k not in ("date", "time", "ms", "level", "message")
-        }
+        metadata = {"component": fields.get("component", ""), "thread": fields.get("thread", "")}
 
     elif source == "generic":
         try:
