@@ -1,5 +1,5 @@
-from raglog.adapter.generic.EmbeddingsAdapter
-from raglog.store.qdrant import QdrantVectorStore
+from adapter.generic import EmbeddingsAdapter
+from store.qdrant import QdrantVectorStore
 
 def validate_query(query: str) -> None:
     """Validate the user's query."""
@@ -23,12 +23,7 @@ def retrieve(
     the most similar points from Qdrant.
     """
 
-    if not isinstance(query, str):
-        raise TypeError("Query must be a string.")
-
-    if not query.strip():
-        raise ValueError("Query cannot be empty.")
-
+    validate_query(query)
     if not collection:
         raise ValueError("Collection name cannot be empty.")
 
