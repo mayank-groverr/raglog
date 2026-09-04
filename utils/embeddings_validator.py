@@ -7,3 +7,4 @@ def validate_embedding(embedding):
         raise ValueError("Embedding cannot be empty.")
     if not all(isinstance(value, float) for value in embedding):
         raise TypeError("Embedding must contain only floats.")
+    return True
