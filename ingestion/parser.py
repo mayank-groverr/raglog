@@ -1,19 +1,6 @@
 
 import re
-import sys
 from pathlib import Path
-
-def input_file_location(input_path):
-   
-    """
-    Function to take input and validate if its is path object or not.
-    arguments: input_path: (of type: Path)
-    error: ValueError if the input is not a valid Path object.
-    """
-   
-    if isinstance(input_path, Path):
-        return input_path
-    raise ValueError(f"{input_path} is not a valid Path object.")
 
 def check_path_exists(input_path):
     
@@ -43,7 +30,7 @@ def check_is_folder_or_file(input_path):
 
 
 
-def validate_file_name(file_name, regex_pattern):
+def validate_file_name(path, regex_pattern):
     """
     Function to validate the file name against a regex pattern.
     arguments: file_name: (of type: str), regex_pattern: (of type: str)
@@ -53,44 +40,20 @@ def validate_file_name(file_name, regex_pattern):
     if not isinstance(regex_pattern, str):
         raise ValueError(f"{regex_pattern} must be of type str.")
 
-    if re.match(regex_pattern, file_name):
+    if re.match(regex_pattern, path.name):
         return True
 
-    raise ValueError(f"{file_name} does not match the regex pattern {regex_pattern}.")
+    raise ValueError(f"{path.name} does not match the regex pattern {regex_pattern}.")
 
-def validate_file_extension(file_location, allowed_extensions):
-    
-    """
-    Function to validate the file extension against a list of allowed extensions.
-    arguments: file_location: (of type: Path), allowed_extensions: (of type: list)
-    error: ValueError if the file extension is not in the list of allowed extensions.
-    """
-
-    if not isinstance(allowed_extensions, list):
-        raise ValueError(f"{allowed_extensions} must be of type list.")
-    if file_location.suffix in allowed_extensions:
-        return True
-    raise ValueError(f"{file_location.name} has an invalid extension.")
-
-def validate_name_and_extension(file_location, regex_pattern, allowed_extensions):
-    """
-    Function to validate the file name and extension.
-    arguments: file_location: (of type: Path), regex_pattern: (of type: str), allowed_extensions: (of type: list)
-    error: ValueError if the file name does not match the regex pattern or if the file extension is not in the list of allowed extensions.
-    """
-
-    validate_file_name(file_location.name, regex_pattern)
-    validate_file_extension(file_location, allowed_extensions)
-    return True
 
 def check_file_empty(file_path):
     """
     Function to check if the file is empty.
     arguments: file_path: (of type: Path)
-    returns: True if the file is empty, False otherwise.
+    returns: ValueError if the file is empty, False otherwise.
     """
     if file_path.stat().st_size == 0:
-        return True
+        raise ValueError(f"{file_path} has no content.")
     return False
 
 
@@ -98,33 +61,56 @@ def check_folder_empty(folder_path):
     """
     Function to check if the folder is empty.
     arguments: folder_path: (of type: Path)
-    returns: True if the folder is empty, False otherwise.
+    returns: ValueError if the folder is empty, False otherwise.
     """
     if not any(folder_path.iterdir()):
-        return True
+        raise ValueError(f"{folder_path} is empty.")
     return False
     
-def parse_file(file_location, pattern_for_splitting):
-    
-    """
-    Function to parse the file.
-    arguments: file_location: (of type: Path), pattern_for_splitting: (of type: str)
-    error: ValueError if the file does not exist.
-    """
+def parse_file(file_location):
+    check_file_empty(file_location)
 
-    check_path_exists(file_location)
+    print(f"\nParsing file: {file_location}")
 
-    if check_file_empty(file_location):
-        raise ValueError(f"{file_location} is empty.")
+    content = file_location.read_text(encoding="utf-8")
 
-    content = file_location.read_text(encoding='utf-8')
-    content = re.split(pattern_for_splitting, content, flags=re.MULTILINE)
-    content = [  
-        line.replace("\n", " ").strip()
-        for line in content
-        if len(line) > 0
-    ]
-    return content
+    pattern_for_splitting = r"(?=^Rule\s+\d+:)"
+    pattern_for_rules = r"^(Rule\s+\d+):\s*(.*)$"
+
+    content = re.split(
+        pattern_for_splitting,
+        content,
+        flags=re.MULTILINE
+    )
+
+    parsed_rules = []
+
+    for line in content:
+        line = line.replace("\n", " ").strip()
+
+        if len(line) == 0:
+            continue
+
+        match = re.match(
+            pattern_for_rules,
+            line
+        )
+
+        if match:
+            rule_identifier = match.group(1)
+            rule_text = match.group(2)
+
+            print(f"{rule_identifier}: {rule_text}")
+
+            parsed_rules.append(
+                (
+                    file_location,
+                    rule_identifier,
+                    rule_text
+                )
+            )
+
+    return parsed_rules
 
 
     
@@ -132,58 +118,54 @@ def parse_file(file_location, pattern_for_splitting):
 def parse_folder(folder_location, pattern_for_files):
     """
     Function to parse the folder.
-    arguments: folder_location: (of type: Path), pattern_for_files: (of type: str)
     """
-
 
     if not isinstance(pattern_for_files, str):
-        raise ValueError(f"{pattern_for_files} must be of type str.")
+        raise ValueError(
+            f"{pattern_for_files} must be of type str."
+        )
 
-    if check_folder_empty(folder_location):
-        raise ValueError(f"{folder_location} is empty.")
-    
-    files = [
-        file for file in folder_location.rglob("*")
-        if file.is_file() and re.match(pattern_for_files, file.name)
-    ]
+    check_folder_empty(folder_location)
+
+    files = []
+
+    for file in folder_location.rglob("*"):
+
+        if not file.is_file():
+            continue
+
+        try:
+            validate_file_name(
+                file,
+                pattern_for_files,
+            )
+
+            files.append(file)
+
+        except ValueError:
+            # File doesn't match the required name/extension.
+            continue
 
     if not files:
-        raise ValueError(f"No valid rule files found in {folder_location}.")
-    
+        raise ValueError(
+            f"No valid rule files found in {folder_location} matching the {pattern_for_files} pattern."
+        )
+
     return files
 
+def rules_parser(input_path: str, pattern_for_files: str):
+    if not isinstance(input_path, str):    
+        raise TypeError("Input path must be a string.")
 
-# To be changed
-def main():
-    """
-    Main function to demonstrate the usage of the above functions.
-    """
-    
-    #Path Input from command line argument
-    input_path = input_file_location(Path(sys.argv[1]))
-    print("Input path:" , input_path)
+    path = Path(input_path);
+    check_path_exists(path)
+    type_of_path = check_is_folder_or_file(path)
 
-    # Check if the path exists
-    check_path_exists(input_path)
-
-    # check if the path is a folder or file
-    path_type = check_is_folder_or_file(input_path)
-    print(f"{input_path} is a {path_type}.")
-
-
-    regex_pattern = r"^exceptions-rule\d*\.txt$"
-    
-    if path_type == "file" and validate_name_and_extension(input_path, regex_pattern, [".txt"]):
-        content = parse_file(input_path, r"(?=^Rule\s+\d+:)")
-        print(f"Parsed content from file {input_path}:")
-        print(content)
-    elif path_type == "folder":
-        files = parse_folder(input_path, regex_pattern)
+    content = []
+    if type_of_path == "file" and validate_file_name(path, pattern_for_files):
+        content.extend(parse_file(path))
+    elif type_of_path == "folder":
+        files = parse_folder(path, pattern_for_files)
         for file in files:
-            content = parse_file(file, r"(?=^Rule\s+\d+:)")
-            print(f"Parsed content from file {file}:")
-            print(content)
-
-
-if __name__ == "__main__":
-    main()
+            content.extend(parse_file(file))
+    return content

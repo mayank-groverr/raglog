@@ -96,3 +96,21 @@ class QdrantVectorStore:
             )
         except (UnexpectedResponse, httpx.ConnectError, httpx.TimeoutException) as e:
             raise translate_qdrant_error(e, collection, extra=f" or id '{id}'") from e
+
+    @retry_on_transient
+    def create_point_Struct(self, id: str , vector: list[float], payload: dict) -> PointStruct:
+        """
+        Function to create a PointStruct object for Qdrant.
+        arguments: id: (of type: str), vector: (of type: list[float]), payload: (of type: dict)
+        returns: PointStruct object.
+        """
+        return PointStruct(id=id, vector=vector, payload=payload)
+
+    @retry_on_transient
+    def collection_exists(self, collection: str) -> bool:
+        """
+        To check if a collection exists in Qdrant.
+        arguments: collection: (of type: str)
+        returns: True if the collection exists, False otherwise.
+        """
+        return self.client.collection_exists(collection)
